@@ -1,4 +1,3 @@
-import json
 from confluent_kafka import Producer
 
 class KafkaProducer:
@@ -16,8 +15,8 @@ class KafkaProducer:
             'client.id': client_id
         })
         
-    def send_message(self, topic: str, message: dict, callback: callable=None):
-        self._producer.produce(topic, value=json.dumps(message), callback=callback)
+    def send_message(self, topic: str, message: str, callback: callable=None):
+        self._producer.produce(topic, value=message, callback=callback)
         self._producer.poll(0)
         
     def flush(self):

@@ -11,7 +11,7 @@ conf = {
 consumer = Consumer(conf)
 
 # S'abonner au topic
-topic = 'my_topic'  # Remplace par le nom de ton topic
+topic = 'pacemaker-measures'  # Remplace par le nom de ton topic
 consumer.subscribe([topic])
 
 try:
