@@ -1,4 +1,17 @@
+import json
+
 from confluent_kafka import Consumer, KafkaException, KafkaError
+from pymongo import MongoClient
+
+# Connect to database
+username = "admin"
+password = "secret"
+host = "localhost"
+port = 27017
+uri = f"mongodb://{username}:{password}@{host}:{port}"
+client = MongoClient(uri)
+db = client['data-engineering']
+collection = db['pacemaker-measures']
 
 # Configuration du Consumer
 conf = {
@@ -31,7 +44,11 @@ try:
                 raise KafkaException(msg.error())
         
         # Afficher le message reçu
-        print(f"Message reçu : {msg.value().decode('utf-8')}")
+        message_str = msg.value().decode('utf-8')
+        d = json.loads(message_str)
+        print(f"Message reçu : {message_str}")
+        collection.insert_one(d)
+        print("Message inséré dans la base de données.")
 
 except KeyboardInterrupt:
     print("Arrêt du consumer.")
