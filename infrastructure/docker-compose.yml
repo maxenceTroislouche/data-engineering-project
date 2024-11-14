@@ -19,16 +19,97 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
-  mongodb:
-    image: mongo:latest
+  mongo-config1:
+    image: mongo
+    container_name: mongo-config1
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=secret
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all
     ports:
-      - "27017:27017"
+      - "27019:27017"
     volumes:
-      - mongodb_data:/data/db
-    restart: unless-stopped
+      - mongo-config1-data:/data/db
+    networks:
+      - mongo-network
+
+  mongo-config2:
+    image: mongo
+    container_name: mongo-config2
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all
+    ports:
+      - "27020:27017"
+    volumes:
+      - mongo-config2-data:/data/db
+    networks:
+      - mongo-network
+
+  mongo-config3:
+    image: mongo
+    container_name: mongo-config3
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    command: mongod --configsvr --replSet configReplSet --bind_ip_all
+    ports:
+      - "27021:27017"
+    volumes:
+      - mongo-config3-data:/data/db
+    networks:
+      - mongo-network
+
+  # Serveurs de shard (2)
+  mongo-shard1:
+    image: mongo
+    container_name: mongo-shard1
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    command: mongod --shardsvr --replSet shardReplSet1 --bind_ip_all
+    ports:
+      - "27022:27017"
+    volumes:
+      - mongo-shard1-data:/data/db
+    networks:
+      - mongo-network
+
+  mongo-shard2:
+    image: mongo
+    container_name: mongo-shard2
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    command: mongod --shardsvr --replSet shardReplSet2 --bind_ip_all
+    ports:
+      - "27023:27017"
+    volumes:
+      - mongo-shard2-data:/data/db
+    networks:
+      - mongo-network
+
+  # Mongos router (1)
+  mongo-router:
+    image: mongo
+    container_name: mongo-router
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    command: mongos --configdb configReplSet/mongo-config1:27017,mongo-config2:27017,mongo-config3:27017 --bind_ip_all
+    ports:
+      - "27018:27017"
+    networks:
+      - mongo-network
+
+networks:
+  mongo-network:
+    driver: bridge
 
 volumes:
-  mongodb_data:  # Définir un volume Docker pour persister les données
+  mongo-config1-data:
+  mongo-config2-data:
+  mongo-config3-data:
+  mongo-shard1-data:
+  mongo-shard2-data:
