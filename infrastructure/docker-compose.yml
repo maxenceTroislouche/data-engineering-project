@@ -19,16 +19,47 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
-  mongodb:
-    image: mongo:latest
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=secret
-    ports:
-      - "27017:27017"
+  configsvr01:
+    image: mongo:4.4
+    container_name: configsvr01
+    command: ["/scripts/config-setup.sh"]
     volumes:
-      - mongodb_data:/data/db
-    restart: unless-stopped
+      - ./sharding-scripts:/scripts
+    networks:
+      - mongo-cluster
 
-volumes:
-  mongodb_data:  # Définir un volume Docker pour persister les données
+  shard01:
+    image: mongo:4.4
+    container_name: shard01
+    command: ["/scripts/shard1-setup.sh"]
+    volumes:
+      - ./sharding-scripts:/scripts
+    networks:
+      - mongo-cluster
+
+  shard02:
+    image: mongo:4.4
+    container_name: shard02
+    command: ["/scripts/shard2-setup.sh"]
+    volumes:
+      - ./sharding-scripts:/scripts
+    networks:
+      - mongo-cluster
+
+  mongos:
+    image: mongo:4.4
+    container_name: mongos
+    depends_on:
+      - configsvr01
+      - shard01
+      - shard02
+    command: ["/scripts/mongos-setup.sh"]
+    volumes:
+      - ./sharding-scripts:/scripts
+    ports:
+      - 27017:27017
+    networks:
+      - mongo-cluster
+
+networks:
+  mongo-cluster:
